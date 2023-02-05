@@ -1,7 +1,10 @@
 GOOGLE_PROJECT_ID="trazadomus-prueba"
 CLOUD_RUN_SERVICE="trazadomus-api"
 INSTANCE_CONNECTION_NAME="trazadomus-api:"
-export $(cat .env | xargs)
+DB_USER="grd"
+DB_NAME="grdxf"
+DB_PORT=3306
+DB_HOST='34.227.142.38'
 
 gcloud builds submit --tag gcr.io/$GOOGLE_PROJECT_ID/$CLOUD_RUN_SERVICE --project=$GOOGLE_PROJECT_ID
 
