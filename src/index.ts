@@ -75,7 +75,7 @@ function queryCiclos(idGRD=0, max=20) {
       datefecha AS FechaHora,
       p17 AS "NodeRegistro",
       CAST(p18 AS DATE) AS "FechaEsterilización",
-      p19 AS "HoraEsterilización",
+      TIME(p19) AS "HoraEsterilización",
       p20 AS "CiclosTotales",
       p21 AS "CiclosFallidos",
       p22 AS "CiclosExitosos",
@@ -106,5 +106,6 @@ function queryCiclos(idGRD=0, max=20) {
       LIMIT ${max}`;
   };
   return `${query}
+    ORDER BY datefecha DESC
     LIMIT ${max}`;
 };
