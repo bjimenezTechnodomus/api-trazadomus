@@ -1,7 +1,6 @@
 node_modules/
 jspm_packages/
 .npm
-.env
 .env.development.local
 .env.test.local
 .env.production.local
