@@ -27,7 +27,7 @@ app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.json({ status: "API trazadomus en línea" });
 }));
 app.get("/ciclos", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const query = queryCiclos(0, 10);
+    const query = queryCiclos(0, 50);
     pool.query(query, (error, results) => {
         if (error)
             throw error;
@@ -84,7 +84,7 @@ function queryCiclos(idGRD = 0, max = 20) {
       datefecha AS FechaHora,
       p17 AS "NodeRegistro",
       CAST(p18 AS DATE) AS "FechaEsterilización",
-      p19 AS "HoraEsterilización",
+      TIME(p19) AS "HoraEsterilización",
       p20 AS "CiclosTotales",
       p21 AS "CiclosFallidos",
       p22 AS "CiclosExitosos",
@@ -116,6 +116,7 @@ function queryCiclos(idGRD = 0, max = 20) {
     }
     ;
     return `${query}
+    ORDER BY datefecha DESC
     LIMIT ${max}`;
 }
 ;

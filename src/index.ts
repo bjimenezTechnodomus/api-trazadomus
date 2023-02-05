@@ -18,7 +18,7 @@ app.get('/', async (req, res) => {
 });
 
 app.get("/ciclos", async (req, res) => {
-  const query = queryCiclos(0, 10);
+  const query = queryCiclos(0, 50);
   pool.query(query, (error, results) => {
     if(error) throw error;
     if(!results[0]) {
