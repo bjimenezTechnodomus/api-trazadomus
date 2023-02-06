@@ -14,11 +14,13 @@ app.listen(port, () => {
 app.use(express.json());
 
 app.get('/', async (req, res) => {
-  res.json({status: "API trazadomus en línea"});
+  res.json({status: "API trazadomus"});
 });
 
 app.get("/ciclos", async (req, res) => {
-  const query = queryCiclos(0, 50);
+  const { size } = req.query;
+  const limit:number = Number(size) || 50;
+  const query = queryCiclos(0, limit);
   pool.query(query, (error, results) => {
     if(error) throw error;
     if(!results[0]) {
@@ -32,6 +34,7 @@ app.get("/ciclos", async (req, res) => {
 app.get("/equipos", async(req, res) => {
   const query =
   `select
+    equipos.id as id,
     equipos.grdid as idGRD,
     c_ubicacion.strnombre as ubicacion
   from equipos
@@ -47,9 +50,11 @@ app.get("/equipos", async(req, res) => {
   });
 });
 
-app.get("/equipos/:idGRD", (req, res) => {
-  const id = Number(req.params.idGRD);
-  const query = queryCiclos(id);
+app.get("/ciclos/:idGRD", (req, res) => {
+  const id:number = Number(req.params.idGRD);
+  const { size } = req.query;
+  const limit:number = Number(size)||20;
+  const query = queryCiclos(id, limit);
   pool.query(query, (error, results) => {
     if(error) {
       res.json(error);

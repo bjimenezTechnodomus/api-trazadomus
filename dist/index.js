@@ -24,10 +24,12 @@ app.listen(port, () => {
 });
 app.use(express_1.default.json());
 app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.json({ status: "API trazadomus en línea" });
+    res.json({ status: "API trazadomus" });
 }));
 app.get("/ciclos", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const query = queryCiclos(0, 50);
+    const { size } = req.query;
+    const limit = Number(size) || 50;
+    const query = queryCiclos(0, limit);
     pool.query(query, (error, results) => {
         if (error)
             throw error;
@@ -41,6 +43,7 @@ app.get("/ciclos", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 }));
 app.get("/equipos", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const query = `select
+    equipos.id as id,
     equipos.grdid as idGRD,
     c_ubicacion.strnombre as ubicacion
   from equipos
@@ -56,9 +59,11 @@ app.get("/equipos", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         }
     });
 }));
-app.get("/equipos/:idGRD", (req, res) => {
+app.get("/ciclos/:idGRD", (req, res) => {
     const id = Number(req.params.idGRD);
-    const query = queryCiclos(id);
+    const { size } = req.query;
+    const limit = Number(size) || 20;
+    const query = queryCiclos(id, limit);
     pool.query(query, (error, results) => {
         if (error) {
             res.json(error);
