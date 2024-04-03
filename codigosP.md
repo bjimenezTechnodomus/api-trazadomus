@@ -1,4 +1,5 @@
 p1 Codigo de Error
+p2 ??
 p3 Tiempo total del ciclo
 p4 Concentración de H2O2
 p5 Temperatura máxima de plasma
@@ -20,4 +21,6 @@ p20 Ciclos Totales
 p21 Ciclos Fallidos
 p22 Ciclos Exitosos
 p23 Tipo de ciclo
+p24 ??
 p25 Ciclo exito
+p26 ??
