@@ -54,7 +54,12 @@ app.get("/ciclos/:idGRD", (req, res) => {
   const id:number = Number(req.params.idGRD);
   const { size } = req.query;
   const limit:number = Number(size)||20;
-  const query = queryCiclos(id, limit);
+  const { start } = req.query;
+  const { end } = req.query;
+  let query = queryCiclos(id, limit);
+  if(start) {
+    query = queryCiclos(id, limit, datesQuery=true, start=start, end=end)
+  }
   pool.query(query, (error, results) => {
     if(error) {
       res.json(error);
@@ -72,7 +77,9 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST
 })
 
-function queryCiclos(idGRD=0, max=20) {
+const yesterday = (d = new Date()) => new Date(d.setDate(d.getDate() - 1))
+
+function queryCiclos(idGRD=0, max=20, datesQuery=false, start=yesterday(), end=new Date()) {
   const query = `SELECT
       id AS idCiclo,
       grdid AS idGRD,
@@ -110,7 +117,21 @@ function queryCiclos(idGRD=0, max=20) {
       ORDER BY datefecha DESC
       LIMIT ${max}`;
   };
+  if(dates) {
+    return `${query}
+      WHERE datefecha
+      BETWEEN ${start} AND ${end}
+      ORDER BY datefecha DESC`;
+  }
+  if(dates && idGRD) {
+    return `${query}
+      WHERE grdid = ${idGRD} AND datefecha
+      BETWEEN ${start} AND ${end}
+      ORDER BY datefecha DESC`;
+  }
   return `${query}
     ORDER BY datefecha DESC
     LIMIT ${max}`;
 };
+
+
