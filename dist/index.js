@@ -13,11 +13,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const mysql_1 = __importDefault(require("mysql"));
+const mysql2_1 = __importDefault(require("mysql2"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const port = process.env.PORT || 8080;
+const pool = mysql2_1.default.createPool({
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST
+}).promise();
 app.listen(port, () => {
     // tslint:disable-next-line:no-console
     console.log(`Servidor iniciado en el puerto ${port}`);
@@ -29,17 +35,20 @@ app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 app.get("/ciclos", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { size } = req.query;
     const limit = Number(size) || 50;
-    const query = queryCiclos(0, limit);
-    pool.query(query, (error, results) => {
-        if (error)
-            throw error;
+    const { startDate, endDate } = req.query;
+    const { query, parameters } = queryCiclos(0, limit, !!(startDate && endDate), startDate === null || startDate === void 0 ? void 0 : startDate.toString(), endDate === null || endDate === void 0 ? void 0 : endDate.toString());
+    try {
+        const [results] = yield pool.query(query, parameters);
         if (!results[0]) {
             res.json({ status: "No hay datos" });
         }
         else {
             res.json(results);
         }
-    });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Error en la base de datos", message: error.message });
+    }
 }));
 app.get("/equipos", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const query = `select
@@ -49,46 +58,62 @@ app.get("/equipos", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
   from equipos
   left join c_equipo_ubicacion ON c_equipo_ubicacion.idequipo = equipos.id
   left join c_ubicacion on c_ubicacion.id  = c_equipo_ubicacion.idubicacion;`;
-    pool.query(query, (error, results) => {
-        if (error) {
-            res.json(error);
-            throw error;
-        }
-        else {
-            res.json(results);
-        }
-    });
+    try {
+        const [results] = yield pool.query(query);
+        res.json(results);
+    }
+    catch (error) {
+        res.status(500).json({ error: "Error en la base de datos", message: error.message });
+    }
 }));
-app.get("/ciclos/:idGRD", (req, res) => {
+app.get("/ciclos/:idGRD", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const id = Number(req.params.idGRD);
     const { size } = req.query;
-    const limit = Number(size) || 20;
-    const { start } = req.query;
-    const { end } = req.query;
-    let query = queryCiclos(id, limit);
-    if (start) {
-        query = queryCiclos(id, limit, datesQuery = true, start = start, end = end);
+    const limit = Number(size) || 50;
+    const { start, end } = req.query;
+    const { query, parameters } = queryCiclos(id, limit, !!(start && end), start === null || start === void 0 ? void 0 : start.toString(), end === null || end === void 0 ? void 0 : end.toString());
+    try {
+        const [results] = yield pool.query(query, parameters);
+        res.json(results);
     }
-    pool.query(query, (error, results) => {
-        if (error) {
-            res.json(error);
-            throw error;
-        }
-        else {
-            res.json(results);
-        }
-        ;
-    });
-});
-const pool = mysql_1.default.createPool({
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST
-});
-const yesterday = (d = new Date()) => new Date(d.setDate(d.getDate() - 1));
-function queryCiclos(idGRD = 0, max = 20, datesQuery = false, start = yesterday(), end = new Date()) {
-    const query = `SELECT
+    catch (error) {
+        res.status(500).json({ error: "Error en la base de datos", message: error.message });
+    }
+}));
+app.get("/equipos/status/:idGRD?", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const idGRD = req.params.idGRD;
+    let query = `
+    SELECT
+      e.id as idEquipo,
+      e.grdid as idGRD,
+      cu.strnombre as ubicacion,
+      e.numciclos as ciclosTotales,
+      e.numfallos as ciclosFallidos,
+      e.numexitos as ciclosExitosos,
+      e.strModo as modoCiclo,
+      c.datefecha as ultimaFechaCiclo
+    FROM equipos e
+    LEFT JOIN c_equipo_ubicacion ceu ON ceu.idequipo = e.id
+    LEFT JOIN c_ubicacion cu ON cu.id = ceu.idubicacion
+    LEFT JOIN ciclos2 c ON c.id = (SELECT MAX(id) FROM ciclos2 WHERE grdid = e.grdid)
+    WHERE e.numactivo = 1
+  `;
+    const parameters = [];
+    if (idGRD) {
+        query += ` AND e.grdid = ?`;
+        parameters.push(idGRD);
+    }
+    try {
+        const [results] = yield pool.query(query, parameters);
+        res.json(results);
+    }
+    catch (error) {
+        res.status(500).json({ error: "Error en la base de datos", message: error.message });
+    }
+}));
+function queryCiclos(idGRD = 0, max = 20, datesQuery = false, start, end) {
+    const parameters = [];
+    const baseQuery = `SELECT
       id AS idCiclo,
       grdid AS idGRD,
       strubicacion AS Ubicación,
@@ -119,28 +144,29 @@ function queryCiclos(idGRD = 0, max = 20, datesQuery = false, start = yesterday(
       numparomanual AS "ParoManual",
       numconsumo AS "Facturable"
       FROM ciclos2`;
+    let whereClause = "";
+    const whereConditions = [];
     if (idGRD) {
-        return `${query}
-      WHERE grdid = ${idGRD}
-      ORDER BY datefecha DESC
-      LIMIT ${max}`;
+        whereConditions.push(`grdid = ?`);
+        parameters.push(idGRD);
     }
-    ;
-    if (dates) {
-        return `${query}
-      WHERE datefecha
-      BETWEEN ${start} AND ${end}
-      ORDER BY datefecha DESC`;
+    if (datesQuery && start && end) {
+        whereConditions.push(`datefecha BETWEEN ? AND ?`);
+        parameters.push(start, end);
     }
-    if (dates && idGRD) {
-        return `${query}
-      WHERE grdid = ${idGRD} AND datefecha
-      BETWEEN ${start} AND ${end}
-      ORDER BY datefecha DESC`;
+    if (whereConditions.length > 0) {
+        whereClause = ` WHERE ${whereConditions.join(' AND ')}`;
     }
-    return `${query}
-    ORDER BY datefecha DESC
-    LIMIT ${max}`;
+    const orderByClause = " ORDER BY datefecha DESC";
+    let limitClause = "";
+    if (max > 0) {
+        limitClause = ` LIMIT ?`;
+        parameters.push(max);
+    }
+    return {
+        query: `${baseQuery}${whereClause}${orderByClause}${limitClause}`,
+        parameters
+    };
 }
 ;
 //# sourceMappingURL=index.js.map
