@@ -28,7 +28,7 @@ jobs:
     - name: Build and Push Docker Image
       id: build-and-push
       run: |
-        IMAGE_PATH="${{ secrets.ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secret.ARTIFACT_REGISTRY_REPO}}/${{ secrets.CLOUD_RUN_SERVICE }}:${{ github.sha }}"
+        IMAGE_PATH="${{ secrets.ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REGISTRY_REPO}}/${{ secrets.CLOUD_RUN_SERVICE }}:${{ github.sha }}"
         docker build -t $IMAGE_PATH .
         docker push $IMAGE_PATH
         echo "::set-output name=image_path::$IMAGE_PATH"
