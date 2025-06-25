@@ -39,6 +39,6 @@ jobs:
           --image ${{ steps.build-and-push.outputs.image_path }}\
           --set-env-vars "DB_USER=${{ secrets.DB_USER }},DB_PASS=${{ secrets.DB_PASS }},DB_NAME=${{ secrets.DB_NAME }},DB_HOST=${{ secrets.DB_HOST }}" \
           --platform managed \
-          --region ${{ secrets.ARTIFACTS_REGISTRY_LOCATION }} \
+          --region ${{ secrets.ARTIFACT_REGISTRY_LOCATION }} \
           --allow-unauthenticated \
           --project=${{ secrets.GCP_PROJECT_ID }}
