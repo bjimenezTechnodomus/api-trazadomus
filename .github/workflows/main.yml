@@ -22,20 +22,23 @@ jobs:
     - name: Set up Cloud SDK
       uses: 'google-github-actions/setup-gcloud@v1'
 
-    - name: Configure Docker
-      run: gcloud auth configure-docker --quiet
+    - name: Configure Docker for Artifact Registry
+      run: gcloud auth configure-docker ${{ secrets.ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev --quiet
 
     - name: Build and Push Docker Image
+      id: build-and-push
       run: |
-        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.CLOUD_RUN_SERVICE }}:${{ github.sha }} .
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.CLOUD_RUN_SERVICE }}:${{ github.sha }}
+        IMAGE_PATH="${{ secrets.ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secret.ARTIFACT_REGISTRY_REPO}}/${{ secrets.CLOUD_RUN_SERVICE }}:${{ github.sha }}"
+        docker build -t $IMAGE_PATH .
+        docker push $IMAGE_PATH
+        echo "::set-output name=image_path::$IMAGE_PATH"
 
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy ${{ secrets.CLOUD_RUN_SERVICE }} \
-          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.CLOUD_RUN_SERVICE }}:${{ github.sha }} \
+          --image ${{ steps.build-and-push.outputs.image_path }}\
           --set-env-vars "DB_USER=${{ secrets.DB_USER }},DB_PASS=${{ secrets.DB_PASS }},DB_NAME=${{ secrets.DB_NAME }},DB_HOST=${{ secrets.DB_HOST }}" \
           --platform managed \
-          --region us-central1 \
+          --region ${{ secrets.ARTIFACTS_REGISTRY_LOCATION }} \
           --allow-unauthenticated \
           --project=${{ secrets.GCP_PROJECT_ID }}

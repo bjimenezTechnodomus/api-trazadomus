@@ -77,19 +77,15 @@ app.get("/equipos/status/:idGRD?", async (req, res) => {
   const idGRD = req.params.idGRD;
   let query = `
     SELECT
-      e.id as idEquipo,
+      r.date as ultimaConexion,
       e.grdid as idGRD,
       cu.strnombre as ubicacion,
-      e.numciclos as ciclosTotales,
-      e.numfallos as ciclosFallidos,
-      e.numexitos as ciclosExitosos,
-      e.strModo as modoCiclo,
-      c.datefecha as ultimaFechaCiclo
-    FROM equipos e
-    LEFT JOIN c_equipo_ubicacion ceu ON ceu.idequipo = e.id
-    LEFT JOIN c_ubicacion cu ON cu.id = ceu.idubicacion
-    LEFT JOIN ciclos2 c ON c.id = (SELECT MAX(id) FROM ciclos2 WHERE grdid = e.grdid)
-    WHERE e.numactivo = 1
+      ceu.numactivo as activo
+    FROM (((equipos e
+      JOIN c_equipo_ubicacion ceu ON ((ceu.idequipo = e.id)))
+      JOIN c_ubicacion cu ON ((cu.id = ceu.idubicacion)))
+      LEFT JOIN reports r ON ((r.grd_id = e.grdid)))
+    WHERE ceu.numactivo = 1 AND r.date IS NOT NULL
   `;
 
   const parameters = [];
