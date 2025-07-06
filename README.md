@@ -4,27 +4,46 @@
 
 ## Servicios disponibles.
 
-Solo se puede solicitar datos con solicitudes http `GET` a la URL `trazadomus-api.technodomus.com` en los endpoints `ciclos` que devuelve los últimos 50 ciclos y `equipos` que devuelve los idGDR que identifican a cada equipo y su ubicación. Con el idGRD se puede hacer una solicitud a `ciclos/{idGRD}` para obtener los últimos 20 ciclos realizados por ese equipo, en formato JSON.
+Se pueden solicitar datos con solicitudes http `GET` a la URL `trazadomus-api.technodomus.com` en los siguientes endpoints:
+
+-`/ciclos`: Devuelve los últimos 50 ciclos.
+   - `size`: (opcional) Especifica el número de ciclos a devolver.
+   - `startDate`: (opcional) Fecha de inicio para filtrar los ciclos (formato YYYY-MM-DD).
+   - `endDate`: (opcional) Fecha de fin para filtrar los ciclos (formato YYYY-MM-DD).
+- `/ciclos/{idGRD}`: Devuelve los últimos 50 ciclos del equipo especificado.
+   - `size`: (opcional) Especifica el número de ciclos a devolver.
+   - `start`: (opcional) Fecha de inicio para filtrar los ciclos (formato YYYY-MM-DD).
+   - `end`: (opcional) Fecha de fin para filtrar los ciclos (formato YYYY-MM-DD).
+- `/equipos`: Devuelve los identificadores `idGRD` de cada equipo y su ubicación.
+   - `/equipos/status/`​: Devuelve el estado de todos los equipos activos.
+   - `/equipos/status/{idGRD}`: Devuelve el estado del equipo especificado.
 
 ## Ejemplo de uso
 
-```bash
-curl 'https://trazadomus-api.technodomus.com/ciclos' | jq
-```
+`curl 'https://trazadomus-api.technodomus.com/ciclos' | jq`
 Devuelve la lista de los últimos 50 ciclos.
 
-```bash
-curl 'https://trazadomus-api.technodomus.com/equipos' | jq
-```
-Devuelve la lista de los idGDR de los equipos.
+`curl 'https://trazadomus-api.technodomus.com/ciclos?size=10' | jq`
+Devuelve la lista de los últimos 10 ciclos.
 
-```bash
-curl 'https://trazadomus-api.technodomus.com/ciclos/861' | jq
-```
-Devuelve los primeros 20 ciclos del equipo con idGRD 1.
+`curl 'https://trazadomus-api.technodomus.com/ciclos?startDate=2023-01-01&endDate=2023-01-31' | jq`
+Devuelve la lista de ciclos entre el 1 y el 31 de enero de 2023.
+
+`curl 'https://trazadomus-api.technodomus.com/equipos' | jq`
+Devuelve la lista de los `idGRD` de los equipos.
+
+`curl 'https://trazadomus-api.technodomus.com/ciclos/861' | jq`
+Devuelve los últimos 50 ciclos del equipo con `idGRD` 861.
+
+`curl 'https://trazadomus-api.technodomus.com/ciclos/861?size=5' | jq`
+Devuelve los últimos 5 ciclos del equipo con `idGRD` 861.
+
+`curl 'https://trazadomus-api.technodomus.com/equipos/status/861' | jq`
+Devuelve el estado del equipo con `idGRD` 861.
 
 ## TODO
 - [ ] Habilitar seguridad
+- [ ] Homgeneizar los términos de las consultas (`end` y `endDate`)
 - [x] Solicitar más o menos registros
-- [ ] Hacer solicitudes para fechas especificas
+- [x] Hacer solicitudes para fechas especificas
 - [x] Incluir los endpoints en el dominio de Technodomus.
