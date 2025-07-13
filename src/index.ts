@@ -24,10 +24,9 @@ app.get('/', async (req, res) => {
 });
 
 app.get("/ciclos", async (req, res) => {
-  const { size } = req.query;
-  const limit:number = Number(size) || 50;
-  const { startDate, endDate } = req.query;
-  const { query, parameters } = queryCiclos(0, limit, !!(startDate && endDate), startDate?.toString(), endDate?.toString());
+  const { limit, startDate, endDate } = req.query;
+  const limitValue:number = Number(limit) || 50;
+  const { query, parameters } = queryCiclos(0, limitValue, !!(startDate && endDate), startDate?.toString(), endDate?.toString());
   try {
     const [results] = await pool.query<RowDataPacket[]>(query, parameters);
     if(!results[0]) {
@@ -59,11 +58,10 @@ app.get("/equipos", async(req, res) => {
 
 app.get("/ciclos/:idGRD", async (req, res) => {
   const id:number = Number(req.params.idGRD);
-  const { size } = req.query;
-  const limit:number = Number(size)||50;
-  const { start, end } = req.query;
+  const { limit, startDate, endDate } = req.query;
+  const limitValue:number = Number(limit) || 50;
 
-  const { query, parameters } = queryCiclos(id, limit, !!(start && end), start?.toString(), end?.toString());
+  const { query, parameters } = queryCiclos(id, limitValue, !!(startDate && endDate), startDate?.toString(), endDate?.toString());
 
   try {
     const [results] = await pool.query<RowDataPacket[]>(query, parameters);
@@ -102,7 +100,7 @@ app.get("/equipos/status/:idGRD?", async (req, res) => {
   }
 });
 
-function queryCiclos(idGRD = 0, max = 20, datesQuery = false, start?: string, end?: string) {
+function queryCiclos(idGRD = 0, limit = 20, datesQuery = false, startDate?: string, endDate?: string) {
   const parameters: any[] = [];
   const baseQuery = `SELECT
       id AS idCiclo,
@@ -144,9 +142,9 @@ function queryCiclos(idGRD = 0, max = 20, datesQuery = false, start?: string, en
     parameters.push(idGRD);
   }
 
-  if (datesQuery && start && end) {
+  if (datesQuery && startDate && endDate) {
     whereConditions.push(`datefecha BETWEEN ? AND ?`);
-    parameters.push(start, end);
+    parameters.push(startDate, endDate);
   }
 
   if (whereConditions.length > 0) {
@@ -155,9 +153,9 @@ function queryCiclos(idGRD = 0, max = 20, datesQuery = false, start?: string, en
 
   const orderByClause = " ORDER BY datefecha DESC";
   let limitClause = "";
-  if (max > 0) {
+  if (limit > 0) {
       limitClause = ` LIMIT ?`;
-      parameters.push(max);
+      parameters.push(limit);
   }
 
   return {
